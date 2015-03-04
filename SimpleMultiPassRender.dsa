@@ -32,8 +32,15 @@
 	gbFiletype.columns = 2;
 	var wLblFiSu = new DzLabel( gbFiletype );
 	wLblFiSu.text = "File type";
-	var wEdFiSu = new DzLineEdit( gbFiletype );
-	wEdFiSu.text = "bmp"
+	
+	var wComboBox = new DzComboBox( gbFiletype );
+    wComboBox.insertItem( "bmp" );
+    wComboBox.insertItem( "png" );
+    wComboBox.insertItem( "jpg" );
+    wComboBox.insertItem( "tif" );
+    wComboBox.currentItem = 1;
+	// var wEdFiSu = new DzLineEdit( gbFiletype );
+	// wEdFiSu.text = "bmp"
 
 
 	var wRenderListBtn = addButtonToGB( gb, "Multi-pass Render", RenderList );
@@ -85,7 +92,8 @@ function RenderList()
 			outDir + "/" +
 			Scene.getLight(i).getName() + 
 			"." + 
-			wEdFiSu.text;
+			wComboBox.currentText;
+//			wEdFiSu.text;
 
 		var fi = new DzFileInfo( outPic );
 		if( !bOkayedOverwrites )
