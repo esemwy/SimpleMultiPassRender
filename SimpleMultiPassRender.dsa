@@ -7,6 +7,7 @@
     var bRenderDone = false;
     var bAbort = false;
     var bOkayedOverwrites = false;
+    var bLightStatus;
     
     var outDir = "D:"
     
@@ -40,7 +41,7 @@
     wCbFiSu.insertItem( "tif" );
     wCbFiSu.currentItem = 1;
 
-    var wRenderListBtn = addButtonToGB( gb, "Multi-pass Render", RenderList );
+    var wRenderListBtn = addButtonToGB( gb, "Multi-pass Render", RenderAll );
 
     var wCancelBtn = new DzPushButton( gb );
     wCancelBtn.text = "&Exit";
@@ -62,6 +63,36 @@
     wDlg.minHeight = 200;
     
     wDlg.exec();
+
+//==================================================================
+//
+//==================================================================
+function RenderAll()
+{
+    SaveLights();
+    RenderList();
+    RenderMask();
+    RestoreLights();
+}
+
+function SaveLights()
+{
+    var light_num = Scene.getNumLights();
+    bLightStatus = Array();
+
+    for(var i=0; i<light_num; i++)
+    {
+        bLightStatus[j] = Scene.getLight(j).isOn();
+    }
+}
+function RestoreLights()
+{
+    var light_num = Scene.getNumLights();
+    for(var i=0; i<light_num; i++)
+    {
+        Scene.getLight(j).setVisible(bLightStatus[j]);
+    }
+}
 
 //==================================================================
 //
@@ -127,6 +158,63 @@ function RenderList()
     }
 }
 
+//==================================================================
+//
+//==================================================================
+function RenderMask()
+{
+    bAbort = false;
+    bOkayedOverwrites = false;
+
+    var light_num = Scene.getNumLights();
+
+    //hide all  lights
+    for (var j=0; j<light_num; j++)
+    {
+        Scene.getLight(j).setVisible(false);
+    }
+
+    var outPic = 
+        outDir + "/" +
+        "Mask" + 
+        "." + 
+        wCbFiSu.currentText;
+
+    var fi = new DzFileInfo( outPic );
+    if( !bOkayedOverwrites )
+    {
+        if( fi.exists() )
+        {
+            if( MessageBox.question( "Do you really want to overwrite the image file\n \"" + outPic + "\" \n and all other images that follow?\nClick Yes to overwrite old images with the new renders, click No to stop.", "TexAnim", "&Yes", "&No" ) == 0 )
+            {
+                bOkayedOverwrites = true;
+            }
+            else
+            {
+                return;
+            }
+        }
+    }
+    if( bOkayedOverwrites )
+    {
+        if( fi.exists() )
+        {
+            fi.remove();
+        }
+    }
+    renderSettings.renderImgFilename = outPic;
+    bRenderDone = false;
+    oRenderMgr.doRender();
+    while(  !bRenderDone )
+    {
+        processEvents();
+    }
+    if( bAbort )
+    {
+        break;
+    }
+
+}
 
 //==================================================================
 // add a button to gb, set its text to text, connect it to func
