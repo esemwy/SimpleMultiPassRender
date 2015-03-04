@@ -9,7 +9,7 @@
     var bOkayedOverwrites = false;
     var bLightStatus;
     
-    var outDir = "D:"
+    var outDir = App.getDocumentsPath();
     
     var programName         = "simpleMultiPassRender";
     var versionName         = "v1";
@@ -82,7 +82,7 @@ function SaveLights()
 
     for(var i=0; i<light_num; i++)
     {
-        bLightStatus[j] = Scene.getLight(j).isOn();
+        bLightStatus[i] = Scene.getLight(i).isOn();
     }
 }
 function RestoreLights()
@@ -90,7 +90,7 @@ function RestoreLights()
     var light_num = Scene.getNumLights();
     for(var i=0; i<light_num; i++)
     {
-        Scene.getLight(j).setVisible(bLightStatus[j]);
+        Scene.getLight(i).setVisible(bLightStatus[i]);
     }
 }
 
