@@ -1,6 +1,7 @@
 // DAZ Studio version 4.6  filetype DAZ Script
 //=====================================================
 // simple multi-pass render script
+// modified from Butaixianran's SimpleMultiPassRender.dsa
 // modified from mCasual/Jacques's mcjListRender.dsa
 // MIT License
 //=====================================================
