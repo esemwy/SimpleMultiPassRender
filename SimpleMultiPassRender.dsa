@@ -4,131 +4,131 @@
 // modified from mCasual/Jacques's mcjListRender.dsa
 // MIT License
 //=====================================================
-	var bRenderDone = false;
-	var bAbort = false;
-	var bOkayedOverwrites = false;
-	
-	var outDir = "D:"
-	
-	var programName 		= "simpleMultiPassRender";
-	var versionName 		= "v1";
+    var bRenderDone = false;
+    var bAbort = false;
+    var bOkayedOverwrites = false;
+    
+    var outDir = "D:"
+    
+    var programName         = "simpleMultiPassRender";
+    var versionName         = "v1";
 
-	//set dialog
-	var wDlg = new DzDialog;
-	wDlg.caption = programName + " " + versionName;
+    //set dialog
+    var wDlg = new DzDialog;
+    wDlg.caption = programName + " " + versionName;
 
-	var gb = new DzVGroupBox( wDlg );
-	var gbBrowse = new DzVGroupBox( gb );
-	gbBrowse.columns = 3;
-	var wLblDest = new DzLabel( gbBrowse );
-	wLblDest.text = "Destination";
-	var wEdDest = new DzLineEdit( gbBrowse );
-	wEdDest.text = outDir;
-	wEdDest.readOnly = true
-	var wBrowseBtn = addButtonToGB( gbBrowse, "Browse ...", BrowseDir );
+    var gb = new DzVGroupBox( wDlg );
+    var gbBrowse = new DzVGroupBox( gb );
+    gbBrowse.columns = 3;
+    var wLblDest = new DzLabel( gbBrowse );
+    wLblDest.text = "Destination";
+    var wEdDest = new DzLineEdit( gbBrowse );
+    wEdDest.text = outDir;
+    wEdDest.readOnly = true
+    var wBrowseBtn = addButtonToGB( gbBrowse, "Browse ...", BrowseDir );
 
 
-	var gbFiletype = new DzVGroupBox( gb );
-	gbFiletype.columns = 2;
-	var wLblFiSu = new DzLabel( gbFiletype );
-	wLblFiSu.text = "File type";
-	
-	var wComboBox = new DzComboBox( gbFiletype );
+    var gbFiletype = new DzVGroupBox( gb );
+    gbFiletype.columns = 2;
+    var wLblFiSu = new DzLabel( gbFiletype );
+    wLblFiSu.text = "File type";
+    
+    var wComboBox = new DzComboBox( gbFiletype );
     wComboBox.insertItem( "bmp" );
     wComboBox.insertItem( "png" );
     wComboBox.insertItem( "jpg" );
     wComboBox.insertItem( "tif" );
     wComboBox.currentItem = 1;
-	// var wEdFiSu = new DzLineEdit( gbFiletype );
-	// wEdFiSu.text = "bmp"
+    // var wEdFiSu = new DzLineEdit( gbFiletype );
+    // wEdFiSu.text = "bmp"
 
 
-	var wRenderListBtn = addButtonToGB( gb, "Multi-pass Render", RenderList );
+    var wRenderListBtn = addButtonToGB( gb, "Multi-pass Render", RenderList );
 
-	var wCancelBtn = new DzPushButton( gb );
-	wCancelBtn.text = "&Exit";
-	wDlg.setRejectButton( wCancelBtn );
+    var wCancelBtn = new DzPushButton( gb );
+    wCancelBtn.text = "&Exit";
+    wDlg.setRejectButton( wCancelBtn );
 
 
 
-	var oRenderMgr = App.getRenderMgr();
+    var oRenderMgr = App.getRenderMgr();
 
-	var renderSettings = oRenderMgr.getRenderOptions();
+    var renderSettings = oRenderMgr.getRenderOptions();
 
-	renderSettings.isCurrentFrameRender = true;
+    renderSettings.isCurrentFrameRender = true;
 
-	renderSettings.renderImgToId = renderSettings.DirectToFile;
+    renderSettings.renderImgToId = renderSettings.DirectToFile;
 
-	connect( oRenderMgr, "renderFinished(bool)", renderFinishedsignaled );
-	
-	wDlg.minWidth = 320;
-	wDlg.minHeight = 200;
-	
-	wDlg.exec();
+    connect( oRenderMgr, "renderFinished(bool)", renderFinishedsignaled );
+    
+    wDlg.minWidth = 320;
+    wDlg.minHeight = 200;
+    
+    wDlg.exec();
 
 //==================================================================
 //
 //==================================================================
 function RenderList()
 {
-	bAbort = false;
-	bOkayedOverwrites = false;
+    bAbort = false;
+    bOkayedOverwrites = false;
 
-	var light_num = Scene.getNumLights();
+    var light_num = Scene.getNumLights();
 
-	//render all lights one by one
-	for(var i=0; i<light_num; i++)
-	{
-		//hide all other lights
-		for (var j=0; j<light_num; j++)
-		{
-			Scene.getLight(j).setVisible(false);
-		}
+    //render all lights one by one
+    for(var i=0; i<light_num; i++)
+    {
+        //hide all other lights
+        for (var j=0; j<light_num; j++)
+        {
+            Scene.getLight(j).setVisible(false);
+        }
 
-		//only render one light a time
-		Scene.getLight(i).setVisible(true);
+        //only render one light a time
+        Scene.getLight(i).setVisible(true);
 
-		var outPic = 
-			outDir + "/" +
-			Scene.getLight(i).getName() + 
-			"." + 
-			wComboBox.currentText;
-//			wEdFiSu.text;
+        var outPic = 
+            outDir + "/" +
+            Scene.getLight(i).getName() + 
+            "." + 
+            wComboBox.currentText;
+//            wEdFiSu.text;
 
-		var fi = new DzFileInfo( outPic );
-		if( !bOkayedOverwrites )
-		{
-			if( fi.exists() )
-			{
-				if( MessageBox.question( "Do you really want to overwrite the image file\n \"" + outPic + "\" \n and all other images that follow?\nClick Yes to overwrite old images with the new renders, click No to stop.", "TexAnim", "&Yes", "&No" ) == 0 )
-				{
-					bOkayedOverwrites = true;
-				}
-				else
-				{
-					return;
-				}
-			}
-		}
-		if( bOkayedOverwrites )
-		{
-			if( fi.exists() )
-			{
-				fi.remove();
-			}
-		}
-		renderSettings.renderImgFilename = outPic;
-		bRenderDone = false;
-		oRenderMgr.doRender();
-		while(  !bRenderDone )
-		{
-			processEvents();
-		}
-		if( bAbort )
-		{
-			break;
-		}
-	}
+        var fi = new DzFileInfo( outPic );
+        if( !bOkayedOverwrites )
+        {
+            if( fi.exists() )
+            {
+                if( MessageBox.question( "Do you really want to overwrite the image file\n \"" + outPic + "\" \n and all other images that follow?\nClick Yes to overwrite old images with the new renders, click No to stop.", "TexAnim", "&Yes", "&No" ) == 0 )
+                {
+                    bOkayedOverwrites = true;
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
+        if( bOkayedOverwrites )
+        {
+            if( fi.exists() )
+            {
+                fi.remove();
+            }
+        }
+        renderSettings.renderImgFilename = outPic;
+        bRenderDone = false;
+        oRenderMgr.doRender();
+        while(  !bRenderDone )
+        {
+            processEvents();
+        }
+        if( bAbort )
+        {
+            break;
+        }
+    }
 }
 
 
@@ -137,10 +137,10 @@ function RenderList()
 //==================================================================
 function addButtonToGB( gb, text, func )
 {
-	var wButton = new DzPushButton( gb );
-	wButton.text = text;
-	connect( wButton, "clicked()", func );
-	return( wButton );
+    var wButton = new DzPushButton( gb );
+    wButton.text = text;
+    connect( wButton, "clicked()", func );
+    return( wButton );
 }
 
 
@@ -149,11 +149,11 @@ function addButtonToGB( gb, text, func )
 //==================================================================
 function renderFinishedsignaled( success )
 {
-	bRenderDone = true;
-	if( !success )
-	{
-		bAbort = true;
-	}
+    bRenderDone = true;
+    if( !success )
+    {
+        bAbort = true;
+    }
 }
 
 //==================================================================
@@ -161,14 +161,14 @@ function renderFinishedsignaled( success )
 //==================================================================
 function BrowseDir()
 {
-	var path = FileDialog.doDirectoryDialog( 
-		"Select a Directory for the rendered", 
-		"", 
-		outDir );
-	if( path )
-	{
-		outDir = path;
-		wEdDest.text = path;
-	}
+    var path = FileDialog.doDirectoryDialog( 
+        "Select a Directory for the rendered", 
+        "", 
+        outDir );
+    if( path )
+    {
+        outDir = path;
+        wEdDest.text = path;
+    }
 }
 
