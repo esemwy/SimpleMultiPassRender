@@ -10,8 +10,13 @@
     var bOkayedOverwrites = false;
     var bLightStatus;
     
-    var outDir = App.getDocumentsPath();
-    
+    var outDir;
+    var nPlatform = App.platform();
+    if( nPlatform == App.Windows )
+        outDir = System.getenv("HOMEDRIVE")+System.getenv("HOMEPATH");
+    else if( nPlatform == App.MacOSX )
+        outDir = System.getenv("HOME");
+
     var programName         = "simpleMultiPassRender";
     var versionName         = "v1";
 
@@ -33,7 +38,7 @@
     var gbFiletype = new DzVGroupBox( gb );
     gbFiletype.columns = 2;
     var wLblFiSu = new DzLabel( gbFiletype );
-    wLblFiSu.text = "File type";
+    wLblFiSu.text = "File type / extension";
     
     var wCbFiSu = new DzComboBox( gbFiletype );
     wCbFiSu.insertItem( "bmp" );
