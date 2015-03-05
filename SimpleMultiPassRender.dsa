@@ -9,6 +9,13 @@
     var bAbort = false;
     var bOkayedOverwrites = false;
     var bLightStatus;
+    var bLightIntensity;
+    var bLightIllumination;
+    var bRenderSeparate = true;
+    var OFF = 0;
+    var DIFFUSE = 1;
+    var SPECULAR = 2;
+    var ON = 3;
     
     var outDir;
     var nPlatform = App.platform();
@@ -47,6 +54,17 @@
     wCbFiSu.insertItem( "tif" );
     wCbFiSu.currentItem = 1;
 
+    var gbSepLts = new DzVGroupBox( gb );
+    gbSepLts.columns = 2;
+
+    var wCkSepLts = new DzCheckBox( gbSepLts );
+    wCkSepLts.text = "Separate passes for\nDiffuse / Specular";
+    wCkSepLts.checked = true;
+
+    var wCkMaxLts = new DzCheckBox( gbSepLts );
+    wCkMaxLts.text = "Set Lights to 100%\nIntensity";
+    wCkMaxLts.checked = true;
+
     var wRenderListBtn = addButtonToGB( gb, "Multi-pass Render", RenderAll );
 
     var wCancelBtn = new DzPushButton( gb );
@@ -66,7 +84,7 @@
     connect( oRenderMgr, "renderFinished(bool)", renderFinishedsignaled );
     
     wDlg.minWidth = 320;
-    wDlg.minHeight = 200;
+    wDlg.minHeight = 250;
     
     wDlg.exec();
 
@@ -77,10 +95,31 @@ function RenderAll()
 {
     bAbort = false;
     bOkayedOverwrites = false;
+    var light_num = Scene.getNumLights();
+    var outPic;
 
     SaveLights();
-    RenderList();
-    RenderMask();
+    
+    for (var i=0; i<light_num; i++) {
+        LightsOff();
+        var theLight = Scene.getLight(i);
+        if (wCkSepLts.checked) {
+            SetLight(i, 1, SPECULAR);
+            outPic = outDir + "/" + theLight.getName()+ " Specular." + wCbFiSu.currentText;
+            RenderScene(outPic);
+            SetLight(i, 1, DIFFUSE);
+            outPic = outDir + "/" + theLight.getName()+ " Diffuse." + wCbFiSu.currentText;
+            RenderScene(outPic);
+        }
+        else {
+            outPic = outDir + "/" + theLight.getName()+ "." + wCbFiSu.currentText;
+            SetLight(i, 1, ON);
+            RenderScene(outPic);
+        }
+    }
+    LightsOff();
+    outPic = outDir + "/Mask.png"; // Preserve transparency (would also work with TIF)
+    RenderScene(outPic);
     RestoreLights();
 }
 
@@ -88,11 +127,17 @@ function SaveLights()
 {
     var light_num = Scene.getNumLights();
     bLightStatus = Array();
+    bLightIntensity = Array();
+    bLightIllumination = Array();
 
     for(var i=0; i<light_num; i++)
     {
-        bLightStatus[i] = Scene.getLight(i).isOn();
-    }
+        var theLight = Scene.getLight(i);
+        bLightStatus[i] = theLight.isOn();
+        bLightIntensity[i] = theLight.getIntensity();
+        var illuminationControl = theLight.getIlluminationControl();
+        bLightIllumination[i] = illuminationControl.getValue();
+     }
 }
 function RestoreLights()
 {
@@ -100,89 +145,54 @@ function RestoreLights()
     for(var i=0; i<light_num; i++)
     {
         Scene.getLight(i).setVisible(bLightStatus[i]);
-    }
+	    var intensityControl = theLight.getIntensityControl();
+	    intensityControl.setValue(bLightIntensity[i]);
+        var illuminationControl = theLight.getIlluminationControl();
+        illuminationControl.setValue(bLightIllumination[i]);
+   }
 }
 
-//==================================================================
-//
-//==================================================================
-function RenderList()
+function LightsOff()
 {
-
-    var light_num = Scene.getNumLights();
-
-    //render all lights one by one
-    for(var i=0; i<light_num; i++)
-    {
-        //hide all other lights
-        for (var j=0; j<light_num; j++)
-        {
-            Scene.getLight(j).setVisible(false);
-        }
-
-        //only render one light a time
-        Scene.getLight(i).setVisible(true);
-
-        var outPic = 
-            outDir + "/" +
-            Scene.getLight(i).getName() + 
-            "." + 
-            wCbFiSu.currentText;
-
-        var fi = new DzFileInfo( outPic );
-        if( !bOkayedOverwrites )
-        {
-            if( fi.exists() )
-            {
-                if( MessageBox.question( "Do you really want to overwrite the image file\n \"" + outPic + "\" \n and all other images that follow?\nClick Yes to overwrite old images with the new renders, click No to stop.", "TexAnim", "&Yes", "&No" ) == 0 )
-                {
-                    bOkayedOverwrites = true;
-                }
-                else
-                {
-                    return;
-                }
-            }
-        }
-        if( bOkayedOverwrites )
-        {
-            if( fi.exists() )
-            {
-                fi.remove();
-            }
-        }
-        renderSettings.renderImgFilename = outPic;
-        bRenderDone = false;
-        oRenderMgr.doRender();
-        while(  !bRenderDone )
-        {
-            processEvents();
-        }
-        if( bAbort )
-        {
-            break;
-        }
-    }
-}
-
-//==================================================================
-//
-//==================================================================
-function RenderMask()
-{
-    var light_num = Scene.getNumLights();
-
-    //hide all  lights
-    for (var j=0; j<light_num; j++)
+    for (var j=0; j<Scene.getNumLights(); j++)
     {
         Scene.getLight(j).setVisible(false);
     }
 
-    var outPic = 
-        outDir + "/" +
-        "Mask" + 
-        ".png";
+}
 
+function SetLight(lightNumber, intensity, illumination)
+{
+    theLight = Scene.getLight(lightNumber);
+    
+    var intensityControl = theLight.getIntensityControl();
+    var intensityMax = intensityControl.getMax();
+    var intensityMin = intensityControl.getMin();
+    if (wCkMaxLts.checked) {
+        if (intensity > intensityMax) {
+            intensityControl.setValue(intensityMax);
+        }
+        else if (intensity > intensityMax) {
+            intensityControl.setValue(intensityMin);
+        }
+        else {
+            intensityControl.setValue(intensity);
+        }
+    }
+	var illuminationControl = theLight.getIlluminationControl();
+    var illuminationMax = illuminationControl.getMax();
+    var illuminationMin = illuminationControl.getMin();
+    if ((illumination > illuminationMin) && (illumination < illuminationMax)) {
+        illuminationControl.setValue(illumination);
+    }
+    theLight.setVisible(true);
+}
+
+//==================================================================
+//
+//==================================================================
+function RenderScene(outPic)
+{
     var fi = new DzFileInfo( outPic );
     if( !bOkayedOverwrites )
     {
@@ -216,8 +226,8 @@ function RenderMask()
     {
         break;
     }
-
 }
+
 
 //==================================================================
 // add a button to gb, set its text to text, connect it to func
