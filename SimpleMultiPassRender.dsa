@@ -62,7 +62,7 @@
     wCkSepLts.checked = true;
 
     var wCkMaxLts = new DzCheckBox( gbSepLts );
-    wCkMaxLts.text = "Set Lights to 100%\nIntensity";
+    wCkMaxLts.text = "Set Lights to\n100% Intensity";
     wCkMaxLts.checked = true;
 
     var wRenderListBtn = addButtonToGB( gb, "Multi-pass Render", RenderAll );
