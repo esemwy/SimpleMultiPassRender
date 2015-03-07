@@ -1,2 +1,4 @@
 ## A simple multi-pass renderer for DAZ Studio
-Not tested with anything other than 4.7+ on OS X. Usability reports welcome.
+Tested on DAZ Studio 4.7 for both Windows 7 and Mac OS X.
+
+More usability reports needed. Feature requests welcome.
