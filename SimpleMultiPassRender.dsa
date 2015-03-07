@@ -23,7 +23,23 @@
         outDir = System.getenv("HOMEDRIVE")+System.getenv("HOMEPATH");
     else if( nPlatform == App.MacOSX )
         outDir = System.getenv("HOME");
+    
+    var oConfig = loadConfig();
+    if (! oConfig) {
+        oConfig = Object();
+         if( nPlatform == App.Windows )
+            oConfig.outputDirectory = System.getenv("HOMEDRIVE")+System.getenv("HOMEPATH");
+        else if( nPlatform == App.MacOSX )
+            oConfig.outputDirectory = System.getenv("HOME");
+        
+        oConfig.fileExtension = 1; // PNG
+        oConfig.maximizeLights = true;
+        oConfig.separateLights = true;
+        saveConfig(oConfig);
+    }
 
+    outDir = oConfig.outputDirectory;
+        
     var programName         = "simpleMultiPassRender";
     var versionName         = "v1";
 
@@ -52,18 +68,18 @@
     wCbFiSu.insertItem( "png" );
     wCbFiSu.insertItem( "jpg" );
     wCbFiSu.insertItem( "tif" );
-    wCbFiSu.currentItem = 1;
+    wCbFiSu.currentItem = oConfig.fileExtension;
 
     var gbSepLts = new DzVGroupBox( gb );
     gbSepLts.columns = 2;
 
     var wCkSepLts = new DzCheckBox( gbSepLts );
     wCkSepLts.text = "Separate passes for\nDiffuse / Specular";
-    wCkSepLts.checked = true;
+    wCkSepLts.checked = oConfig.separateLights;
 
     var wCkMaxLts = new DzCheckBox( gbSepLts );
     wCkMaxLts.text = "Set Lights to\n100% Intensity";
-    wCkMaxLts.checked = true;
+    wCkMaxLts.checked = oConfig.maximizeLights;
 
     var wRenderListBtn = addButtonToGB( gb, "Multi-pass Render", RenderAll );
 
@@ -98,6 +114,12 @@ function RenderAll()
     var light_num = Scene.getNumLights();
     var outPic;
 
+    oConfig.outputDirectory = outDir;
+    oConfig.fileExtension = wCbFiSu.currentItem;
+    oConfig.separateLights = wCkSepLts.checked;
+    oConfig.maximizeLights = wCkMaxLts.checked;
+    saveConfig(oConfig);
+
     SaveLights();
     
     for (var i=0; i<light_num; i++) {
@@ -121,6 +143,30 @@ function RenderAll()
     outPic = outDir + "/Mask.png"; // Preserve transparency (would also work with TIF)
     RenderScene(outPic);
     RestoreLights();
+}
+
+function saveConfig(obj) {
+	var sJSONData = JSON.stringify(obj, undefined, "\t");
+	var sScriptFileName = DzFile(getScriptFileName());
+	var sConfigName = sScriptFileName.path()+"/."+sScriptFileName.baseName()+".conf";
+	var fConfigFile = DzFile( sConfigName );
+	fConfigFile.open(DzFile.WriteOnly);
+	fConfigFile.writeLine( sJSONData );
+	fConfigFile.close();
+}
+
+function loadConfig()
+{
+	var sScriptFileName = DzFile(getScriptFileName());
+	var sConfigName = sScriptFileName.path()+"/."+sScriptFileName.baseName()+".conf";
+	var fConfigFile = DzFile( sConfigName );
+	if (! fConfigFile.exists())
+	    return false;
+	fConfigFile.open(DzFile.ReadOnly);
+	var sJSONConfig = fConfigFile.read();
+	fConfigFile.close();
+	var obj = JSON.parse( sJSONConfig );
+	return obj;
 }
 
 function SaveLights()
