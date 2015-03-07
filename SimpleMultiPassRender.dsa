@@ -32,6 +32,7 @@
         else if( nPlatform == App.MacOSX )
             oConfig.outputDirectory = System.getenv("HOME");
         
+        oConfig.filePrefix = ""; // PNG
         oConfig.fileExtension = 1; // PNG
         oConfig.maximizeLights = true;
         oConfig.separateLights = true;
@@ -57,6 +58,14 @@
     wEdDest.readOnly = true
     var wBrowseBtn = addButtonToGB( gbBrowse, "Browse ...", BrowseDir );
 
+
+    var gbFilePrefix = new DzVGroupBox( gb );
+    gbFilePrefix.columns = 2;
+    var wLblPrefix = new DzLabel( gbFilePrefix );
+    wLblPrefix.text = "File Prefix";
+    var wEdPrefix = new DzLineEdit( gbFilePrefix );
+    wEdPrefix.text = oConfig.filePrefix;
+    wEdPrefix.readOnly = false;
 
     var gbFiletype = new DzVGroupBox( gb );
     gbFiletype.columns = 2;
@@ -100,7 +109,7 @@
     connect( oRenderMgr, "renderFinished(bool)", renderFinishedsignaled );
     
     wDlg.minWidth = 320;
-    wDlg.minHeight = 250;
+    wDlg.minHeight = 300;
     
     wDlg.exec();
 
@@ -113,34 +122,39 @@ function RenderAll()
     bOkayedOverwrites = false;
     var light_num = Scene.getNumLights();
     var outPic;
+    var sPrefix = "";
 
     oConfig.outputDirectory = outDir;
     oConfig.fileExtension = wCbFiSu.currentItem;
     oConfig.separateLights = wCkSepLts.checked;
     oConfig.maximizeLights = wCkMaxLts.checked;
+    oConfig.filePrefix =  wEdPrefix.text;
     saveConfig(oConfig);
 
     SaveLights();
     
+    sPrefix = wEdPrefix.text;
+    if (sPrefix)
+        sPrefix = sPrefix + " ";
     for (var i=0; i<light_num; i++) {
         LightsOff();
         var theLight = Scene.getLight(i);
         if (wCkSepLts.checked) {
             SetLight(i, 1, SPECULAR);
-            outPic = outDir + "/" + theLight.getName()+ " Specular." + wCbFiSu.currentText;
+            outPic = outDir + "/" + sPrefix + theLight.getName()+ " Specular." + wCbFiSu.currentText;
             RenderScene(outPic);
             SetLight(i, 1, DIFFUSE);
-            outPic = outDir + "/" + theLight.getName()+ " Diffuse." + wCbFiSu.currentText;
+            outPic = outDir + "/"  + sPrefix + theLight.getName()+ " Diffuse." + wCbFiSu.currentText;
             RenderScene(outPic);
         }
         else {
-            outPic = outDir + "/" + theLight.getName()+ "." + wCbFiSu.currentText;
+            outPic = outDir + "/"  + sPrefix + theLight.getName()+ "." + wCbFiSu.currentText;
             SetLight(i, 1, ON);
             RenderScene(outPic);
         }
     }
     LightsOff();
-    outPic = outDir + "/Mask.png"; // Preserve transparency (would also work with TIF)
+    outPic = outDir + "/" + sPrefix + "Mask.png"; // Preserve transparency (would also work with TIF)
     RenderScene(outPic);
     RestoreLights();
 }
